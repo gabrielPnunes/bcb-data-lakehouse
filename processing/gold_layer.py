@@ -1,26 +1,24 @@
 from pyspark.sql import SparkSession
+from pyspark.sql.functions import year, avg
 
-spark = (
-    SparkSession.builder
-    .appName("BCB Gold Layer")
-    .getOrCreate()
-)
+spark = SparkSession.builder.getOrCreate()
 
 df = spark.read.parquet("data/silver/selic")
 
-df.createOrReplaceTempView("selic")
+df = df.withColumn("ano", year("data"))
 
-gold_df = spark.sql("""
-SELECT
-    ano,
-    AVG(valor) AS media_selic
-FROM selic
-GROUP BY ano
-ORDER BY ano
-""")
+gold_df = (
+    df.groupBy("ano")
+      .agg(
+          avg("valor").alias("media_selic")
+      )
+      .orderBy("ano")
+)
+
+gold_df.show()
 
 gold_df.write.mode("overwrite").parquet(
     "data/gold/selic"
 )
 
-print("Camada/medalion Gold criada")
+print("Camada Gold criada")
