@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from ingestion.clients.bcb_client import BCB_Client
-from ingestion.storage.database import engine
+from storage.database import engine
 
 from ingestion.utils.logging import logger
 

@@ -24,4 +24,4 @@ df_silver = (
     .parquet("data/silver/selic")
 )
 
-print("Camada Silver Criada")
+print("Camada/medalion Silver Criada")
