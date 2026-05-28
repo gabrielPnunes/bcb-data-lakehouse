@@ -1,7 +1,8 @@
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import year, avg
+from utils.spark_session import create_spark_session
 
-spark = SparkSession.builder.getOrCreate()
+spark = create_spark_session("Gold Layer")
 
 df = spark.read.parquet("data/silver/selic")
 
