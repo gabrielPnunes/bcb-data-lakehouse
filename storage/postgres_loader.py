@@ -1,6 +1,5 @@
 from pyspark.sql import SparkSession
 
-# criação da sessão Spark
 spark = SparkSession.builder \
     .appName("Postgres Loader") \
     .config(
