@@ -1,17 +1,29 @@
-import pandas as pd
-from sqlalchemy import create_engine
+from pyspark.sql import SparkSession
 
-df = pd.read_parquet("data/gold/selic")
+spark = SparkSession.builder \
+    .appName("Postgres Loader") \
+    .config(
+        "spark.jars.packages",
+        "org.postgresql:postgresql:42.7.3"
+    ) \
+    .getOrCreate()
 
-engine = create_engine(
-    "postgresql://admin:admin@localhost:5432/bcb_data"
-)
+df = spark.read.parquet("data/gold/selic")
 
-df.to_sql(
-    "selic_gold",
-    engine,
-    if_exists="replace",
-    index=False
-)
+print("Visualizando dados da Gold Layer")
+df.show(5)
 
-print("Dados enviados ao PostgreSQL")
+df.write \
+    .format("jdbc") \
+    .option(
+        "url",
+        "jdbc:postgresql://postgres-bcb:5432/bcb_data"
+    ) \
+    .option("dbtable", "gold_selic") \
+    .option("user", "admin") \
+    .option("password", "admin") \
+    .option("driver", "org.postgresql.Driver") \
+    .mode("overwrite") \
+    .save()
+
+print("Dados enviados para PostgreSQL com sucesso")
