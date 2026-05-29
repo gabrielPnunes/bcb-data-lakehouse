@@ -3,6 +3,8 @@ from processing.spark_session import spark
 from pyspark.sql.functions import col, to_date
 from pyspark.sql.types import DoubleType
 
+from utils.logger import logger
+
 df = spark.read.parquet("data/bronze/selic")
 
 silver_df = (
@@ -24,4 +26,4 @@ silver_df.write \
     .mode("overwrite") \
     .save("data/silver/selic")
 
-print("Silver Layer Delta criada")
+logger.info("Camada/medalion Silver Criada")

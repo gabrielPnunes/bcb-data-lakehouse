@@ -3,6 +3,8 @@ from processing.spark_session import spark
 from pyspark.sql.functions import year
 from pyspark.sql.functions import avg
 
+from utils.logger import logger
+
 
 silver_df = (
     spark.read
@@ -29,4 +31,4 @@ gold_df.write \
     .mode("overwrite") \
     .save("data/gold/selic_anual")
 
-print("Gold Layer criada")
+logger.info("Camada/medalion Gold Criada")

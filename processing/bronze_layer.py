@@ -1,4 +1,5 @@
 from pyspark.sql import SparkSession
+from utils.logger import logger
 
 spark = (
     SparkSession.builder
@@ -16,4 +17,4 @@ df.write.mode("overwrite").parquet(
     "data/bronze/selic"
 )
 
-print("Camada/medalion Bronze Criada")
+logger.info("Camada/medalion Bronze Criada")
