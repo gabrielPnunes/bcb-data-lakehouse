@@ -1,25 +1,34 @@
-from pyspark.sql import SparkSession
-from pyspark.sql.functions import year, avg
-from utils.spark_session import create_spark_session
+from processing.spark_session import spark
 
-spark = create_spark_session("Gold Layer")
+from pyspark.sql.functions import year
+from pyspark.sql.functions import avg
 
-df = spark.read.parquet("data/silver/selic")
+from utils.logger import logger
 
-df = df.withColumn("ano", year("data"))
+
+silver_df = (
+    spark.read
+    .format("delta")
+    .load("data/silver/selic")
+)
 
 gold_df = (
-    df.groupBy("ano")
-      .agg(
-          avg("valor").alias("media_selic")
-      )
-      .orderBy("ano")
+    silver_df
+    .withColumn(
+        "ano",
+        year("data")
+    )
+    .groupBy("ano")
+    .agg(
+        avg("valor").alias("media_selic")
+    )
 )
 
-gold_df.show()
+gold_df = gold_df.coalesce(1)
 
-gold_df.write.mode("overwrite").parquet(
-    "data/gold/selic"
-)
+gold_df.write \
+    .format("delta") \
+    .mode("overwrite") \
+    .save("data/gold/selic_anual")
 
-print("Camada Gold criada")
+logger.info("Camada/medalion Gold Criada")

@@ -1,13 +1,14 @@
 services:
 
   postgres:
-    container_name: postgres-bcb
     image: postgres:16
 
+    container_name: postgres-bcb
+
     environment:
-      POSTGRES_DB: bcb_data
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: admin
+      POSTGRES_DB: bcb_data
 
     ports:
       - "5432:5432"
@@ -15,10 +16,10 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
-
   pgadmin:
-    container_name: pgadmin-bcb
     image: dpage/pgadmin4
+
+    container_name: pgadmin-bcb
 
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@admin.com
@@ -30,24 +31,12 @@ services:
     depends_on:
       - postgres
 
-
   spark:
+    build:
+      context: ..
+      dockerfile: docker/spark/Dockerfile
+
     container_name: spark-bcb
-    image: apache/spark:3.5.1
-
-    user: root
-
-    command: >
-      bash -c "
-      pip install pyspark &&
-      mkdir -p /tmp/.ivy2 &&
-      chmod -R 777 /tmp/.ivy2 &&
-      tail -f /dev/null
-      "
-
-    environment:
-      - HOME=/tmp
-      - IVY_HOME=/tmp/.ivy2
 
     ports:
       - "8080:8080"
@@ -58,6 +47,7 @@ services:
 
     working_dir: /app
 
+    tty: true
 
 volumes:
   postgres_data:
