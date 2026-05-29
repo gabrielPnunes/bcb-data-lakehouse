@@ -1,12 +1,11 @@
+from processing.spark_session import spark
+
 from pyspark.sql.functions import col, to_date
-from processing.utils.spark_session import create_spark_session
-
-
-spark = create_spark_session("SilverLayer")
+from pyspark.sql.types import DoubleType
 
 df = spark.read.parquet("data/bronze/selic")
 
-df_silver = (
+silver_df = (
     df
     .withColumn(
         "data",
@@ -14,14 +13,15 @@ df_silver = (
     )
     .withColumn(
         "valor",
-        col("valor").cast("double")
+        col("valor").cast(DoubleType())
     )
 )
 
-(
-    df_silver.write
-    .mode("overwrite")
-    .parquet("data/silver/selic")
-)
+silver_df = silver_df.coalesce(1)
 
-print("Camada/medalion Silver Criada")
+silver_df.write \
+    .format("delta") \
+    .mode("overwrite") \
+    .save("data/silver/selic")
+
+print("Silver Layer Delta criada")
