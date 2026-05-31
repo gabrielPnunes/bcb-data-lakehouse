@@ -16,6 +16,8 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+    restart: unless-stopped
+
   pgadmin:
     image: dpage/pgadmin4
 
@@ -30,6 +32,8 @@ services:
 
     depends_on:
       - postgres
+
+    restart: unless-stopped
 
   spark:
     build:
@@ -48,6 +52,37 @@ services:
     working_dir: /app
 
     tty: true
+
+    restart: unless-stopped
+
+  airflow:
+    image: apache/airflow:2.9.1
+
+    container_name: airflow-bcb
+
+    depends_on:
+      - postgres
+
+    environment:
+      AIRFLOW__CORE__EXECUTOR: SequentialExecutor
+      AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+
+    ports:
+      - "8081:8080"
+
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ../:/app
+
+    working_dir: /app
+
+    command: >
+      bash -c "
+        airflow db migrate &&
+        airflow standalone
+      "
+
+    restart: unless-stopped
 
 volumes:
   postgres_data:
