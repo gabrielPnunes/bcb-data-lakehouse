@@ -1,9 +1,11 @@
+version: '3.8'
+
 services:
 
   postgres:
     image: postgres:16
-
     container_name: postgres-bcb
+    restart: unless-stopped
 
     environment:
       POSTGRES_USER: admin
@@ -18,8 +20,8 @@ services:
 
   pgadmin:
     image: dpage/pgadmin4
-
     container_name: pgadmin-bcb
+    restart: unless-stopped
 
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@admin.com
@@ -31,19 +33,61 @@ services:
     depends_on:
       - postgres
 
+  airflow:
+    build:
+      context: ..
+      dockerfile: docker/airflow/Dockerfile
+
+    container_name: airflow-bcb
+
+    depends_on:
+      - postgres
+
+    environment:
+      AIRFLOW__CORE__EXECUTOR: SequentialExecutor
+      AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://admin:admin@postgres:5432/bcb_data
+      AIRFLOW__CORE__FERNET_KEY: ""
+      JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
+
+    command: >
+      bash -c "
+        airflow db migrate &&
+        airflow users create
+        --username admin
+        --firstname Admin
+        --lastname User
+        --role Admin
+        --email admin@admin.com
+        --password admin || true &&
+        airflow standalone
+      "
+
+    ports:
+      - "8081:8080"
+
+    volumes:
+      - ../airflow/dags:/opt/airflow/dags
+      - ..:/app
+
+    working_dir: /app
+
+    restart: unless-stopped
+
   spark:
     build:
       context: ..
       dockerfile: docker/spark/Dockerfile
 
     container_name: spark-bcb
+    restart: unless-stopped
 
     ports:
       - "8080:8080"
       - "7077:7077"
 
     volumes:
-      - ../:/app
+      - ..:/app
 
     working_dir: /app
 
