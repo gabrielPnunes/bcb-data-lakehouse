@@ -1,29 +1,37 @@
 from processing.spark_session import spark
+from processing.quality_checks import validate_dataframe
 
-from pyspark.sql.functions import col, to_date
-from pyspark.sql.types import DoubleType
+from pyspark.sql.functions import year, avg
 
 from utils.logger import logger
+import sys
 
-df = spark.read.parquet("data/bronze/selic")
-
-silver_df = (
-    df
-    .withColumn(
-        "data",
-        to_date(col("data"), "dd/MM/yyyy")
+try:
+    silver_df = (
+        spark.read
+        .format("delta")
+        .load("file:///app/data/silver/selic")
     )
-    .withColumn(
-        "valor",
-        col("valor").cast(DoubleType())
+
+    gold_df = (
+        silver_df
+        .withColumn("ano", year("data"))
+        .groupBy("ano")
+        .agg(avg("valor").alias("media_selic"))
     )
-)
 
-silver_df = silver_df.coalesce(1)
+    validate_dataframe(gold_df, "Gold Layer")
 
-silver_df.write \
-    .format("delta") \
-    .mode("overwrite") \
-    .save("data/silver/selic")
+    gold_df.coalesce(1).write \
+        .format("delta") \
+        .mode("overwrite") \
+        .save("file:///app/data/gold/selic_anual")
 
-logger.info("Camada/medalion Silver Criada")
+    logger.info("Camada/medalion Gold Criada")
+
+except Exception as e:
+    logger.error(f"Erro na Gold Layer: {e}")
+    sys.exit(1)
+
+finally:
+    spark.stop()

@@ -1,9 +1,11 @@
+version: '3.8'
+
 services:
 
   postgres:
     image: postgres:16
-
     container_name: postgres-bcb
+    restart: unless-stopped
 
     environment:
       POSTGRES_USER: admin
@@ -16,12 +18,10 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
-    restart: unless-stopped
-
   pgadmin:
     image: dpage/pgadmin4
-
     container_name: pgadmin-bcb
+    restart: unless-stopped
 
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@admin.com
@@ -33,30 +33,10 @@ services:
     depends_on:
       - postgres
 
-    restart: unless-stopped
-
-  spark:
+  airflow:
     build:
       context: ..
-      dockerfile: docker/spark/Dockerfile
-
-    container_name: spark-bcb
-
-    ports:
-      - "8080:8080"
-      - "7077:7077"
-
-    volumes:
-      - ../:/app
-
-    working_dir: /app
-
-    tty: true
-
-    restart: unless-stopped
-
-  airflow:
-    image: apache/airflow:2.9.1
+      dockerfile: docker/airflow/Dockerfile
 
     container_name: airflow-bcb
 
@@ -66,23 +46,52 @@ services:
     environment:
       AIRFLOW__CORE__EXECUTOR: SequentialExecutor
       AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://admin:admin@postgres:5432/bcb_data
+      AIRFLOW__CORE__FERNET_KEY: ""
+      JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
+
+    command: >
+      bash -c "
+        airflow db migrate &&
+        airflow users create
+        --username admin
+        --firstname Admin
+        --lastname User
+        --role Admin
+        --email admin@admin.com
+        --password admin || true &&
+        airflow standalone
+      "
 
     ports:
       - "8081:8080"
 
     volumes:
-      - ./airflow/dags:/opt/airflow/dags
-      - ../:/app
+      - ../airflow/dags:/opt/airflow/dags
+      - ..:/app
 
     working_dir: /app
 
-    command: >
-      bash -c "
-        airflow db migrate &&
-        airflow standalone
-      "
-
     restart: unless-stopped
+
+  spark:
+    build:
+      context: ..
+      dockerfile: docker/spark/Dockerfile
+
+    container_name: spark-bcb
+    restart: unless-stopped
+
+    ports:
+      - "8080:8080"
+      - "7077:7077"
+
+    volumes:
+      - ..:/app
+
+    working_dir: /app
+
+    tty: true
 
 volumes:
   postgres_data:
