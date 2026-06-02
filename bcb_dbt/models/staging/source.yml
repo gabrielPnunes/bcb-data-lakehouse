@@ -1,0 +1,7 @@
+version: 2
+
+sources:
+  - name: gold
+    schema: public
+    tables:
+      - name: gold_selic_anual
