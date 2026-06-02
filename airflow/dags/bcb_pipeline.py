@@ -34,4 +34,22 @@ with DAG(
         do_xcom_push=False,
     )
 
-    bronze_task >> silver_task >> gold_task
+    load_postgres_task = BashOperator(
+        task_id="load_postgres",
+        bash_command="cd /app && python3 -m storage.postgres_loader",
+        do_xcom_push=False,
+    )
+
+    dbt_run_task = BashOperator(
+        task_id="dbt_run",
+        bash_command="cd /app/bcb_dbt && dbt run",
+        do_xcom_push=False,
+    )
+
+    dbt_test_task = BashOperator(
+        task_id="dbt_test",
+        bash_command="cd /app/bcb_dbt && dbt test",
+        do_xcom_push=False,
+    )
+
+    bronze_task >> silver_task >> gold_task >> load_postgres_task >> dbt_run_task >> dbt_test_task

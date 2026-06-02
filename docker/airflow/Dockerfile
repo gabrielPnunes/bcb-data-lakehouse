@@ -21,4 +21,6 @@ RUN pip install --no-cache-dir \
     pandas==2.2.2 \
     requests==2.32.3 \
     psycopg2-binary==2.9.9 \
-    pyarrow==16.1.0
+    pyarrow==16.1.0 \
+    dbt-core \
+    dbt-postgres

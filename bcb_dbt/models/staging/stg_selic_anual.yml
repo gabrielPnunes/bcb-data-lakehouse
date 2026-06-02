@@ -1,0 +1,15 @@
+version: 2
+
+models:
+  - name: stg_selic_anual
+    description: "Staging da média anual da taxa SELIC"
+    columns:
+      - name: ano
+        description: "Ano de referência"
+        tests:
+          - unique
+          - not_null
+      - name: media_selic
+        description: "Média anual da taxa SELIC"
+        tests:
+          - not_null

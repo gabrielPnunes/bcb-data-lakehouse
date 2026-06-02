@@ -1,29 +1,52 @@
-from pyspark.sql import SparkSession
+from processing.spark_session import spark
+from utils.logger import logger
+import sys
+import psycopg2
 
-spark = SparkSession.builder \
-    .appName("Postgres Loader") \
-    .config(
-        "spark.jars.packages",
-        "org.postgresql:postgresql:42.7.3"
-    ) \
-    .getOrCreate()
+DB_CONFIG = {
+    "host": "postgres-bcb",
+    "port": 5432,
+    "dbname": "bcb_data",
+    "user": "admin",
+    "password": "admin",
+}
 
-df = spark.read.parquet("data/gold/selic")
+JDBC_URL = "jdbc:postgresql://postgres-bcb:5432/bcb_data"
+JDBC_PROPS = {
+    "user": "admin",
+    "password": "admin",
+    "driver": "org.postgresql.Driver",
+}
 
-print("Visualizando dados da Gold Layer")
-df.show(5)
+try:
 
-df.write \
-    .format("jdbc") \
-    .option(
-        "url",
-        "jdbc:postgresql://postgres-bcb:5432/bcb_data"
-    ) \
-    .option("dbtable", "gold_selic") \
-    .option("user", "admin") \
-    .option("password", "admin") \
-    .option("driver", "org.postgresql.Driver") \
-    .mode("overwrite") \
-    .save()
+    conn = psycopg2.connect(**DB_CONFIG)
+    conn.autocommit = True
+    cur = conn.cursor()
+    cur.execute("TRUNCATE TABLE gold_selic_anual;")
+    cur.close()
+    conn.close()
+    logger.info("Tabela gold_selic_anual truncada")
 
-print("Dados enviados para PostgreSQL com sucesso")
+    df = spark.read \
+        .format("delta") \
+        .load("file:///app/data/gold/selic_anual")
+
+    df.write \
+        .format("jdbc") \
+        .option("url", JDBC_URL) \
+        .option("dbtable", "gold_selic_anual") \
+        .option("user", "admin") \
+        .option("password", "admin") \
+        .option("driver", "org.postgresql.Driver") \
+        .mode("append") \
+        .save()
+
+    logger.info("Gold carregada no PostgreSQL com sucesso")
+
+except Exception as e:
+    logger.error(f"Erro no Load PostgreSQL: {e}")
+    sys.exit(1)
+
+finally:
+    spark.stop()
