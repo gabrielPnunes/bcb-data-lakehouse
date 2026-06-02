@@ -1,0 +1,14 @@
+version: 2
+
+models:
+  - name: mart_selic_anual
+    description: "Modelo analítico da SELIC com classificação por faixa"
+    columns:
+      - name: ano
+        tests:
+          - unique
+          - not_null
+      - name: classificacao_selic
+        tests:
+          - accepted_values:
+              values: ['Alta', 'Moderada', 'Baixa']
