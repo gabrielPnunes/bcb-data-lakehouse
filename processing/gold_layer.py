@@ -1,32 +1,36 @@
 from processing.spark_session import spark
 from processing.quality_checks import validate_dataframe
 
-from pyspark.sql.functions import col, to_date
-from pyspark.sql.types import DoubleType
+from pyspark.sql.functions import year, avg
 
 from utils.logger import logger
 import sys
 
 try:
-    df = spark.read.parquet("file:///app/data/bronze/selic")
-
     silver_df = (
-        df
-        .withColumn("data", to_date(col("data"), "dd/MM/yyyy"))
-        .withColumn("valor", col("valor").cast(DoubleType()))
+        spark.read
+        .format("delta")
+        .load("file:///app/data/silver/selic")
     )
 
-    validate_dataframe(silver_df, "Silver Layer")
+    gold_df = (
+        silver_df
+        .withColumn("ano", year("data"))
+        .groupBy("ano")
+        .agg(avg("valor").alias("media_selic"))
+    )
 
-    silver_df.coalesce(1).write \
+    validate_dataframe(gold_df, "Gold Layer")
+
+    gold_df.coalesce(1).write \
         .format("delta") \
         .mode("overwrite") \
-        .save("file:///app/data/silver/selic")
+        .save("file:///app/data/gold/selic_anual")
 
-    logger.info("Camada/medalion Silver Criada")
+    logger.info("Camada/medalion Gold Criada")
 
 except Exception as e:
-    logger.error(f"Erro na Silver Layer: {e}")
+    logger.error(f"Erro na Gold Layer: {e}")
     sys.exit(1)
 
 finally:

@@ -1,29 +1,27 @@
-from pyspark.sql import SparkSession
+from processing.spark_session import spark
+from utils.logger import logger
+import sys
 
-spark = SparkSession.builder \
-    .appName("Postgres Loader") \
-    .config(
-        "spark.jars.packages",
-        "org.postgresql:postgresql:42.7.3"
-    ) \
-    .getOrCreate()
+try:
+    df = spark.read \
+        .format("delta") \
+        .load("file:///app/data/gold/selic_anual")
 
-df = spark.read.parquet("data/gold/selic")
+    df.write \
+        .format("jdbc") \
+        .option("url", "jdbc:postgresql://postgres-bcb:5432/bcb_data") \
+        .option("dbtable", "gold_selic_anual") \
+        .option("user", "admin") \
+        .option("password", "admin") \
+        .option("driver", "org.postgresql.Driver") \
+        .mode("overwrite") \
+        .save()
 
-print("Visualizando dados da Gold Layer")
-df.show(5)
+    logger.info("Gold carregada no PostgreSQL com sucesso")
 
-df.write \
-    .format("jdbc") \
-    .option(
-        "url",
-        "jdbc:postgresql://postgres-bcb:5432/bcb_data"
-    ) \
-    .option("dbtable", "gold_selic") \
-    .option("user", "admin") \
-    .option("password", "admin") \
-    .option("driver", "org.postgresql.Driver") \
-    .mode("overwrite") \
-    .save()
+except Exception as e:
+    logger.error(f"Erro no Load PostgreSQL: {e}")
+    sys.exit(1)
 
-print("Dados enviados para PostgreSQL com sucesso")
+finally:
+    spark.stop()
