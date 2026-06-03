@@ -1,0 +1,27 @@
+# Logs
+logs/
+airflow/logs/
+docker/airflow/logs/
+
+# Dados
+data/
+
+# Jars
+jars/
+
+# Python
+__pycache__/
+*.pyc
+venv/
+.venv/
+
+# IDEs
+.vscode/
+.idea/
+
+# Git
+.git/
+
+# dbt
+bcb_dbt/target/
+bcb_dbt/dbt_packages/

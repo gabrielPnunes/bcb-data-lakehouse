@@ -1,7 +1,7 @@
 from processing.spark_session import spark
 from processing.quality_checks import validate_dataframe
 
-from pyspark.sql.functions import col, to_date
+from pyspark.sql.functions import col, to_date, pow
 from pyspark.sql.types import DoubleType
 
 from utils.logger import logger
@@ -14,6 +14,7 @@ try:
         df
         .withColumn("data", to_date(col("data"), "dd/MM/yyyy"))
         .withColumn("valor", col("valor").cast(DoubleType()))
+        .withColumn("valor", ((pow(1 + col("valor") / 100, 252) - 1) * 100).cast(DoubleType()))
     )
 
     validate_dataframe(silver_df, "Silver Layer")

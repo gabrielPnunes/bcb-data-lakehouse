@@ -1,35 +1,35 @@
-#Python
+# Python
 __pycache__/
 *.pyc
 *.pyo
 .venv/
 venv/
 
-#Ambiente
+# Ambiente
 .env
 
-#Jars
+# Jars
 jars/
 *.jar
 
-#Dados
+# Dados
 data/
 
-#Logs
+# Logs
 logs/
 airflow/logs/
 docker/airflow/logs/
 
-#Airflow
+# Airflow
 airflow.db
 airflow.cfg
 standalone_admin_password.txt
 
-#dbt
+# dbt
 bcb_dbt/target/
 bcb_dbt/dbt_packages/
 bcb_dbt/logs/
 
-#IDEs
+# IDEs
 .vscode/
 .idea/
