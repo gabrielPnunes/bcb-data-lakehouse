@@ -1,8 +1,10 @@
 import psycopg2
 import pandas as pd
+import os
+
 
 DB_CONFIG = {
-    "host": "localhost",
+    "host": os.getenv("DB_HOST", "localhost"),
     "port": 5432,
     "dbname": "bcb_data",
     "user": "admin",

@@ -1,217 +1,190 @@
 # BCB Data Lakehouse
 
-> Pipeline de Engenharia de Dados com arquitetura Medalhão, processamento distribuído com Apache Spark e persistência em PostgreSQL, utilizando dados econômicos públicos do Banco Central do Brasil.
-
-<div align="center">
-
-![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=flat-square&logo=python&logoColor=white
+![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=flat&logo=python&logoColor=white
 )
-![Apache Spark](https://img.shields.io/badge/Apache_Spark-3.x-E25A1C?style=flat-square&logo=apachespark&logoColor=white
+![Apache Spark](https://img.shields.io/badge/Apache%20Spark-3.5-E25A1C?style=flat&logo=apachespark&logoColor=white
 )
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-4169E1?style=flat-square&logo=postgresql&logoColor=white
+![Delta Lake](https://img.shields.io/badge/Delta%20Lake-3.2-003366?style=flat&logo=delta&logoColor=whit
 )
-![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=flat-square&logo=docker&logoColor=white
+![Apache Airflow](https://img.shields.io/badge/Apache%20Airflow-2.9-017CEE?style=flat&logo=apacheairflow&logoColor=white
 )
-![License](https://img.shields.io/badge/License-MIT-green?style=flat-square
+![dbt](https://img.shields.io/badge/dbt-1.11-FF694B?style=flat&logo=dbt&logoColor=white
+)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?style=flat&logo=postgresql&logoColor=white
+)
+![Docker](https://img.shields.io/badge/Docker-blue?style=flat&logo=docker&logoColor=white
+)
+![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?style=flat&logo=streamlit&logoColor=white
+)
+![Plotly](https://img.shields.io/badge/Plotly-3F4F75?style=flat&logo=plotly&logoColor=white
 )
 
-</div>
+Pipeline moderno de engenharia de dados construído sobre indicadores econômicos do Banco Central do Brasil.
 
----
+## Visão Geral
 
-## Sobre o Projeto
+Projeto end-to-end de engenharia de dados que ingere, processa e disponibiliza indicadores econômicos do BCB em uma arquitetura Lakehouse moderna com orquestração, qualidade de dados, modelagem analítica e dashboard interativo.
 
-O **BCB Data Lakehouse** é um projeto de Engenharia de Dados construído para simular um ambiente profissional de ingestão, transformação e consumo analítico de dados econômicos públicos do [Banco Central do Brasil](https://dadosabertos.bcb.gov.br/).
-
-O projeto aplica o padrão **Lakehouse** com arquitetura Medalhão (Bronze, Silver, Gold), combinando a flexibilidade de um Data Lake com a estrutura analítica de um Data Warehouse. Todo o ambiente roda localmente via Docker, sendo facilmente replicável e escalável para nuvem.
-
-**Motivações do projeto:**
-
-- Praticar Engenharia de Dados em um ambiente realista, com dados reais de produção
-- Construir portfólio técnico com ferramentas relevantes no mercado
----
-
-O fluxo de dados percorre quatro estágios:
-
-1. **Ingestão** -- consumo automático da API pública do BCB via HTTP
-2. **Bronze** -- armazenamento raw em Parquet, sem transformações, preservando a fonte original
-3. **Silver** -- limpeza, tipagem e padronização dos dados com PySpark
-4. **Gold** -- agregações e métricas de negócio prontas para consumo analítico
-5. **Serving** -- carga final no PostgreSQL para consultas SQL e integração com ferramentas de BI
-
----
-
-## Camadas do Pipeline
-
-### Bronze -- Ingestão Raw
-
-- Dados coletados diretamente da API do BCB sem modificações
-- Armazenados em Parquet para eficiência de leitura e compressão
-- Preservam o estado original dos dados para auditoria e reprocessamento
-
-### Silver -- Limpeza e Tipagem
-
-- Cast de tipos (`string` para `date`, `double`, etc.)
-- Remoção de nulos e registros inconsistentes
-- Padronização de nomes de colunas
+## Arquitetura
 
 ```
-root
- |-- data:  date   (nullable = true)
- |-- valor: double (nullable = true)
+API BCB
+   │
+   ▼
+Bronze Layer (Parquet)
+   │
+   ▼
+Silver Layer (Delta Lake) ── transformações e limpeza
+   │
+   ▼
+Gold Layer (Delta Lake) ── agregações analíticas
+   │
+   ▼
+PostgreSQL ── carga via JDBC
+   │
+   ▼
+dbt ── modelagem, testes e documentação
+   │
+   ▼
+Streamlit ── dashboard interativo
 ```
 
-### Gold -- Camada Analítica
+O pipeline completo é orquestrado pelo Apache Airflow com execução diária automática.
 
-- Agregações temporais (médias, variações, janelas)
-- Métricas prontas para consumo por dashboards e relatórios
-- Modelagem orientada a perguntas de negócio
+## Stack
 
----
-
-## Tecnologias
-
-| Categoria | Ferramentas |
+### Data Engineering
+| Tecnologia | Uso |
 |---|---|
-| Linguagem | Python 3.11, SQL |
-| Processamento | Apache Spark, PySpark |
-| Armazenamento | PostgreSQL, Parquet |
-| Infraestrutura | Docker, Docker Compose |
-| Fonte de Dados | API Pública BCB |
-| Bibliotecas | requests, pandas, pyspark, psycopg2 |
+| Python | linguagem principal |
+| Apache Spark / PySpark | processamento distribuído |
+| Delta Lake | formato de armazenamento ACID |
+| Apache Airflow | orquestração do pipeline |
+| dbt | modelagem e testes SQL |
+| PostgreSQL | banco analítico |
+| Docker | containerização |
 
----
+### Visualização
+| Tecnologia | Uso |
+|---|---|
+| Streamlit | dashboard interativo |
+| Plotly | gráficos |
 
-## Estrutura do Repositório
+## Estrutura do Projeto
 
 ```
 bcb-data-lakehouse/
 │
-├── data/
-│   ├── bronze/          # Dados raw (Parquet)
-│   ├── silver/          # Dados limpos e tipados (Parquet)
-│   └── gold/            # Dados agregados (Parquet)
+├── airflow/
+│   └── dags/               # DAGs do Airflow
 │
-├── ingestion/
-│   └── bcb_api.py       # Consumo da API do Banco Central
+├── bcb_dbt/                # projeto dbt
+│   └── models/
+│       ├── staging/        # camada staging
+│       └── marts/          # camada analítica
 │
-├── processing/
-│   ├── bronze_layer.py  # Ingestão para a camada Bronze
-│   ├── silver_layer.py  # Transformações da camada Silver
-│   └── gold_layer.py    # Agregações da camada Gold
+├── dashboard/              # aplicação Streamlit
 │
-├── storage/
-│   └── postgres_loader.py  # Carga no PostgreSQL
+├── docker/                 # infraestrutura Docker
+│   ├── airflow/
+│   ├── spark/
+│   └── streamlit/
 │
-├── docker/
-│   └── docker-compose.yml  # Orquestração dos containers
+├── ingestion/              # scripts de ingestão da API BCB
 │
+├── processing/             # camadas Bronze, Silver e Gold
+│
+├── storage/                # carga para PostgreSQL
+│
+├── utils/                  # utilitários compartilhados
+│
+├── docker-compose.yml
 ├── requirements.txt
 └── README.md
 ```
 
----
+## Pipeline
 
-## Como Executar
+```
+bronze_layer → silver_layer → gold_layer → load_postgres → dbt_run → dbt_test
+```
+
+| Task | Descrição |
+|---|---|
+| `bronze_layer` | ingere CSV da API BCB e salva em Parquet |
+| `silver_layer` | limpa, tipifica e anualiza a taxa SELIC |
+| `gold_layer` | agrega média anual por ano |
+| `load_postgres` | carrega Gold no PostgreSQL via JDBC |
+| `dbt_run` | executa models staging e marts |
+| `dbt_test` | valida qualidade dos dados |
+
+## Como Rodar
 
 ### Pré-requisitos
 
-- Python 3.11+
-- Docker e Docker Compose
+- Docker Desktop
+- Python 3.12+
 - Git
 
 ### 1. Clonar o repositório
 
 ```bash
-git clone https://github.com/seuusuario/bcb-data-lakehouse.git
+git clone https://github.com/gabrielPnunes/bcb-data-lakehouse.git
 cd bcb-data-lakehouse
 ```
 
-### 2. Criar e ativar ambiente virtual
-
-**Windows:**
-```bash
-python -m venv venv
-venv\Scripts\activate
-```
-
-### 3. Instalar dependências
-
-```bash
-pip install -r requirements.txt
-```
-
-### 4. Subir a infraestrutura Docker
+### 2. Subir os containers
 
 ```bash
 cd docker
-docker compose up -d
+docker compose up -d --build
 ```
 
-Aguarde os containers inicializarem. Para verificar o status:
+### 3. Acessar os serviços
+
+| Serviço | URL | Credenciais |
+|---|---|---|
+| Airflow | http://localhost:8081 | admin / admin |
+| pgAdmin | http://localhost:5050 | admin@admin.com / admin |
+| Streamlit | http://localhost:8501 | — |
+| Spark UI | http://localhost:8080 | — |
+
+### 4. Disparar o pipeline
 
 ```bash
-docker compose ps
+docker exec -it airflow-bcb bash -c "airflow dags trigger bcb_lakehouse_pipeline"
 ```
 
-### 5. Executar o pipeline
-
-Execute cada etapa na ordem abaixo:
+### 5. Acompanhar execução
 
 ```bash
-# Ingestão da API
-python -m ingestion.bcb_api
-
-# Bronze Layer
-python -m processing.bronze_layer
-
-# Silver Layer
-python -m processing.silver_layer
-
-# Gold Layer
-python -m processing.gold_layer
+docker exec -it airflow-bcb bash -c "airflow tasks states-for-dag-run bcb_lakehouse_pipeline <run_id>"
 ```
 
-### 6. Carregar no PostgreSQL
-
-Acesse o container Spark e execute o loader:
-
-```bash
-docker exec -it spark-bcb bash
-cd /app
-python3 -m storage.postgres_loader
-```
-
----
-
-## Exemplo de Saída
-
-Amostra dos dados processados na camada Silver:
+## Modelagem dbt
 
 ```
-+----------+----------+
-|      data|     valor|
-+----------+----------+
-|2016-05-27|  0.052531|
-|2016-05-30|  0.052531|
-|2016-05-31|  0.052531|
-+----------+----------+
+gold_selic_anual (PostgreSQL)
+        │
+        ▼
+stg_selic_anual         ── padronização e arredondamento
+        │
+        ▼
+mart_selic_anual        ── classificação Alta / Moderada / Baixa
 ```
 
----
+## Indicadores Disponíveis
 
-## Serviços Docker
+| Indicador | Fonte | Granularidade |
+|---|---|---|
+| Taxa SELIC | BCB | diária → anual |
 
-| Serviço    | Porta | Acesso |
-|------------|-------|--------|
-| PostgreSQL | 5432  | `localhost:5432` |
-| pgAdmin    | 5050  | `http://localhost:5050` |
-| Spark UI   | 8080  | `http://localhost:8080` |
 
-**Credenciais locais (desenvolvimento):**
+## Autor
 
-| Serviço    | Usuário / Email         | Senha  | Database  |
-|------------|-------------------------|--------|-----------|
-| PostgreSQL | `admin`                 | `admin`| `bcb_data`|
-| pgAdmin    | `admin@admin.com`       | `admin`| --        |
----
+Desenvolvido por **Gabriel Pereira Nunes**
+
+Estudante de Data Science e Inteligência Artificial — IESB Brasília  
+
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Gabriel%20Pereira%20Nunes-0A66C2?style=flat&logo=linkedin&logoColor=white)](www.linkedin.com/in/gabriel-pereirann)
+[![GitHub](https://img.shields.io/badge/GitHub-gabrielPnunes-181717?style=flat&logo=github&logoColor=white)](https://github.com/gabrielPnunes)
