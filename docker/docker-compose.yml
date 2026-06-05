@@ -103,6 +103,7 @@ services:
 
     environment:
       DB_HOST: postgres-bcb
+      OLLAMA_HOST: http://host.docker.internal:11434
 
     ports:
       - "8501:8501"
