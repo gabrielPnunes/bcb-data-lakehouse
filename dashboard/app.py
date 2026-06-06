@@ -1,6 +1,11 @@
+import sys
+sys.path.append('/app')
+
 import streamlit as st
 import plotly.express as px
 from queries import get_selic_anual, get_selic_raw
+from agent.sql_agent import ask
+
 from agent.sql_agent import ask
 
 st.set_page_config(
