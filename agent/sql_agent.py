@@ -13,7 +13,10 @@ db = SQLDatabase.from_uri(
     DB_URI,
     schema="analytics",
     view_support=True,
-    include_tables=["mart_selic_anual"],
+    include_tables=[
+        "mart_selic_anual",
+        "mart_indicadores_anual",
+    ],
 )
 
 llm = OllamaLLM(

@@ -1,0 +1,11 @@
+version: 2
+
+sources:
+  - name: gold
+    schema: public
+    tables:
+      - name: gold_selic_anual
+      - name: gold_ipca_anual
+      - name: gold_cambio_anual
+      - name: gold_cdi_anual
+      - name: gold_taxa_real_anual

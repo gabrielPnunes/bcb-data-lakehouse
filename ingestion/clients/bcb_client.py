@@ -1,50 +1,37 @@
-from datetime import datetime
-from datetime import timedelta
-
 import requests
 import pandas as pd
+from utils.logger import logger
+
+BASE_URL = "https://api.bcb.gov.br/dados/serie/bcdata.sgs.{serie}/dados"
+
+SERIES = {
+    "selic":  11,
+    "ipca":   433,
+    "cambio": 1,
+    "cdi":    12,
+}
+
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+}
 
 
-class BCB_Client:
+def fetch_serie(serie_name: str, data_inicio: str = "01/01/2020") -> pd.DataFrame:
+    serie_id = SERIES[serie_name]
+    url = BASE_URL.format(serie=serie_id)
 
-    BASE_URL = (
-        "https://api.bcb.gov.br/dados/"
-        "serie/bcdata.sgs.11/dados"
-    )
-
-    HEADERS = {
-        "Accept": "application/json",
-        "User-Agent": "Mozilla/5.0"
+    params = {
+        "formato":     "json",
+        "dataInicial": data_inicio,
     }
 
-    def get_selic(self):
+    response = requests.get(url, params=params, headers=HEADERS, timeout=30)
+    response.raise_for_status()
 
-        end_date = datetime.today()
-        start_date = (
-            end_date - timedelta(days = 365 * 10)
-        )
+    df = pd.DataFrame(response.json())
+    df.columns = ["data", "valor"]
+    df["indicador"] = serie_name
+    df["valor"] = pd.to_numeric(df["valor"], errors="coerce")
 
-        start_date = start_date.strftime(
-            "%d/%m/%Y"
-        )
-        end_date = end_date.strftime(
-            "%d/%m/%Y"
-        )
-
-        url = (
-            f"{self.BASE_URL}"
-            f"?formato=json"
-            f"&dataInicial={start_date}"
-            f"&dataFinal={end_date}"
-        )
-
-        response = requests.get(
-            url,
-            headers=self.HEADERS,
-            timeout=30
-        )
-
-        response.raise_for_status()
-        data = response.json()
-
-        return pd.DataFrame(data)
+    logger.info(f"Serie {serie_name} ({serie_id}): {len(df)} registros")
+    return df

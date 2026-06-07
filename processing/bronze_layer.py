@@ -1,25 +1,22 @@
-from pyspark.sql import SparkSession
+from processing.spark_session import spark
+from ingestion.clients.bcb_client import fetch_serie
 from utils.logger import logger
 import sys
 
-spark = (
-    SparkSession.builder
-    .appName("BCB Bronze Layer")
-    .getOrCreate()
-)
+SERIES = ["selic", "ipca", "cambio", "cdi"]
 
 try:
-    df = spark.read.csv(
-        "file:///app/data/raw/selic/selic.csv",
-        header=True,
-        inferSchema=True
-    )
+    for serie in SERIES:
+        df_pd = fetch_serie(serie)
+        df = spark.createDataFrame(df_pd)
 
-    df.write.mode("overwrite").parquet(
-        "file:///app/data/bronze/selic"
-    )
+        df.write.mode("overwrite").parquet(
+            f"file:///app/data/bronze/{serie}"
+        )
 
-    logger.info("Camada/medalion Bronze Criada")
+        logger.info(f"Bronze {serie}: {df.count()} registros salvos")
+
+    logger.info("Camada Bronze criada com sucesso")
 
 except Exception as e:
     logger.error(f"Erro na Bronze Layer: {e}")
