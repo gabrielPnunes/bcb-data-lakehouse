@@ -50,6 +50,7 @@ services:
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://admin:admin@postgres:5432/bcb_data
       AIRFLOW__CORE__FERNET_KEY: ""
       JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
+      DB_HOST: postgres-bcb
 
     command: >
       bash -c "
