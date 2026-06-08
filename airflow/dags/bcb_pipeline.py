@@ -1,12 +1,23 @@
 from airflow import DAG
 from airflow.operators.bash import BashOperator
+from utils.callbacks import on_failure_callback, on_success_callback
 
 from datetime import datetime
 
 default_args = {
     "owner": "gabs",
     "retries": 3,
+    "on_failure_callback": on_failure_callback,
 }
+
+TASK_CONFIGS = [
+    ("bronze_layer",  "cd /app && python3 -m processing.bronze_layer"),
+    ("silver_layer",  "cd /app && python3 -m processing.silver_layer"),
+    ("gold_layer",    "cd /app && python3 -m processing.gold_layer"),
+    ("load_postgres", "cd /app && python3 -m storage.postgres_loader"),
+    ("dbt_run",       "cd /app/bcb_dbt && dbt run --profiles-dir /app/bcb_dbt"),
+    ("dbt_test",      "cd /app/bcb_dbt && dbt test --profiles-dir /app/bcb_dbt"),
+]
 
 with DAG(
     dag_id="bcb_lakehouse_pipeline",
@@ -16,40 +27,16 @@ with DAG(
     catchup=False
 ) as dag:
 
-    bronze_task = BashOperator(
-        task_id="bronze_layer",
-        bash_command="cd /app && python3 -m processing.bronze_layer",
-        do_xcom_push=False,
-    )
+    tasks = []
 
-    silver_task = BashOperator(
-        task_id="silver_layer",
-        bash_command="cd /app && python3 -m processing.silver_layer",
-        do_xcom_push=False,
-    )
+    for task_id, command in TASK_CONFIGS:
+        task = BashOperator(
+            task_id=task_id,
+            bash_command=command,
+            do_xcom_push=False,
+            on_success_callback=on_success_callback,
+        )
+        tasks.append(task)
 
-    gold_task = BashOperator(
-        task_id="gold_layer",
-        bash_command="cd /app && python3 -m processing.gold_layer",
-        do_xcom_push=False,
-    )
-
-    load_postgres_task = BashOperator(
-        task_id="load_postgres",
-        bash_command="cd /app && python3 -m storage.postgres_loader",
-        do_xcom_push=False,
-    )
-
-    dbt_run_task = BashOperator(
-        task_id="dbt_run",
-        bash_command="cd /app/bcb_dbt && dbt run",
-        do_xcom_push=False,
-    )
-
-    dbt_test_task = BashOperator(
-        task_id="dbt_test",
-        bash_command="cd /app/bcb_dbt && dbt test",
-        do_xcom_push=False,
-    )
-
-    bronze_task >> silver_task >> gold_task >> load_postgres_task >> dbt_run_task >> dbt_test_task
+    for i in range(len(tasks) - 1):
+        tasks[i] >> tasks[i + 1]

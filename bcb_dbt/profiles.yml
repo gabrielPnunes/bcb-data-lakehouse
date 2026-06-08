@@ -1,0 +1,12 @@
+bcb_dbt:
+  target: dev
+  outputs:
+    dev:
+      type: postgres
+      host: postgres-bcb
+      port: 5432
+      user: admin
+      password: admin
+      dbname: bcb_data
+      schema: analytics
+      threads: 1

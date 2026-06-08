@@ -33,10 +33,10 @@ def truncate_table(table_name: str):
         conn = psycopg2.connect(**DB_CONFIG)
         conn.autocommit = True
         cur = conn.cursor()
-        cur.execute(f"TRUNCATE TABLE {table_name} CASCADE;")
+        cur.execute(f"DELETE FROM {table_name};")
         cur.close()
         conn.close()
-        logger.info(f"Tabela {table_name} truncada")
+        logger.info(f"Tabela {table_name} limpa")
     except Exception:
         logger.info(f"Tabela {table_name} não existe ainda — será criada")
 
