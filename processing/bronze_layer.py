@@ -1,5 +1,6 @@
 from processing.spark_session import spark
 from ingestion.clients.bcb_client import fetch_serie
+from config.settings import BRONZE
 from utils.logger import logger
 import sys
 
@@ -10,10 +11,7 @@ try:
         df_pd = fetch_serie(serie)
         df = spark.createDataFrame(df_pd)
 
-        df.write.mode("overwrite").parquet(
-            f"file:///app/data/bronze/{serie}"
-        )
-
+        df.write.mode("overwrite").parquet(BRONZE[serie])
         logger.info(f"Bronze {serie}: {df.count()} registros salvos")
 
     logger.info("Camada Bronze criada com sucesso")

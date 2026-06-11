@@ -1,5 +1,6 @@
 import os
 
+#banco de dados
 DB_HOST     = os.getenv("DB_HOST", "localhost")
 DB_PORT     = int(os.getenv("DB_PORT", 5432))
 DB_NAME     = os.getenv("DB_NAME", "bcb_data")
@@ -14,7 +15,7 @@ DB_CONFIG = {
     "password": DB_PASSWORD,
 }
 
-JDBC_URL = f"jdbc:postgresql://postgres-bcb:{DB_PORT}/{DB_NAME}"
+JDBC_URL = f"jdbc:postgresql://{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
 JDBC_PROPS = {
     "user":     DB_USER,
@@ -22,6 +23,7 @@ JDBC_PROPS = {
     "driver":   "org.postgresql.Driver",
 }
 
+#caminhos delta lake
 BASE_PATH = "file:///app/data"
 
 BRONZE = {
@@ -39,19 +41,23 @@ SILVER = {
 }
 
 GOLD = {
-    "selic_anual":     f"{BASE_PATH}/gold/selic_anual",
-    "ipca_anual":      f"{BASE_PATH}/gold/ipca_anual",
-    "cambio_anual":    f"{BASE_PATH}/gold/cambio_anual",
-    "cdi_anual":       f"{BASE_PATH}/gold/cdi_anual",
+    "selic_anual":    f"{BASE_PATH}/gold/selic_anual",
+    "ipca_anual":     f"{BASE_PATH}/gold/ipca_anual",
+    "cambio_anual":   f"{BASE_PATH}/gold/cambio_anual",
+    "cdi_anual":      f"{BASE_PATH}/gold/cdi_anual",
     "taxa_real_anual": f"{BASE_PATH}/gold/taxa_real_anual",
+    "ipca_12m":        f"{BASE_PATH}/gold/ipca_12m",
 }
 
+#kafka
 KAFKA_HOST  = os.getenv("KAFKA_HOST", "localhost:29092")
 KAFKA_TOPIC = "selic-stream"
 
+#ollama
 OLLAMA_HOST  = os.getenv("OLLAMA_HOST", "http://localhost:11434")
 OLLAMA_MODEL = "llama3.2"
 
+#n8n
 N8N_WEBHOOK_URL = os.getenv(
     "N8N_WEBHOOK_URL",
     "http://n8n-bcb:5678/webhook/airflow-failure"

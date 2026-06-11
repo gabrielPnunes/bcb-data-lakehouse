@@ -4,7 +4,7 @@ sys.path.append('/app')
 import streamlit as st
 import plotly.express as px
 import plotly.graph_objects as go
-from queries import get_indicadores, get_selic_anual
+from queries import get_indicadores, get_kpis_ano_atual
 from agent.sql_agent import ask
 
 st.set_page_config(
@@ -23,45 +23,57 @@ tab1, tab2, tab3, tab4 = st.tabs([
     "🤖 Assistente IA",
 ])
 
-df = get_indicadores()
-ultimo = df.iloc[-1]
+df   = get_indicadores()
+kpis = get_kpis_ano_atual()
 
-#1 - Visão Geral
 with tab1:
-    st.subheader("Indicadores Recentes")
+    st.subheader("Indicadores do Ano Atual")
 
     col1, col2, col3, col4 = st.columns(4)
 
     with col1:
-        st.metric("Taxa SELIC", f"{ultimo['media_selic']:.2f}%")
+        st.metric("Taxa SELIC", f"{kpis['ultimo_selic'].iloc[0]:.2f}%")
     with col2:
-        st.metric("IPCA", f"{ultimo['media_ipca']:.2f}%")
+        st.metric("CDI", f"{kpis['ultimo_cdi'].iloc[0]:.2f}%")
     with col3:
-        st.metric("Dólar última cotação", f"R$ {ultimo['media_cambio']:.2f}")
+        st.metric("Dólar Última Cotação", f"R$ {kpis['ultimo_cambio'].iloc[0]:.2f}")
     with col4:
-        st.metric("CDI", f"{ultimo['media_cdi']:.2f}%")
+        ultimo = df[df["ano"] == df["ano"].max()].iloc[0]
+        st.metric("Classificação SELIC", ultimo["classificacao_selic"])
 
     st.divider()
 
-    col5, col6 = st.columns(2)
+    col5, col6, col7, col8 = st.columns(4)
 
     with col5:
         st.metric(
-            "Taxa Real de Juros",
-            f"{ultimo['taxa_real']:.2f}%",
-            help="SELIC - IPCA. Muito usado no mercado financeiro."
+            "IPCA Acumulado no Ano",
+            f"{kpis['ipca_acumulado'].iloc[0]:.2f}%",
+            help="Juros compostos dos meses do ano atual."
         )
     with col6:
         st.metric(
-            "Classificação SELIC",
-            ultimo["classificacao_selic"],
+            "IPCA Acumulado 12 Meses",
+            f"{kpis['ipca_12m'].iloc[0]:.2f}%",
+            help="Juros compostos dos últimos 12 meses."
+        )
+    with col7:
+        st.metric(
+            "Taxa Real (Ano)",
+            f"{kpis['taxa_real_ano'].iloc[0]:.2f}%",
+            help="SELIC - IPCA acumulado no ano."
+        )
+    with col8:
+        st.metric(
+            "Taxa Real (12M)",
+            f"{kpis['taxa_real_12m'].iloc[0]:.2f}%",
+            help="SELIC - IPCA acumulado 12 meses."
         )
 
     st.divider()
-    st.subheader("Tabela Completa")
+    st.subheader("Histórico Completo")
     st.dataframe(df, use_container_width=True)
 
-#2 - Evolução
 with tab2:
     st.subheader("Evolução dos Indicadores")
 
@@ -89,55 +101,24 @@ with tab2:
     fig.update_layout(xaxis=dict(dtick=1))
     st.plotly_chart(fig, use_container_width=True)
 
-#3 - Comparações
 with tab3:
     st.subheader("Comparações")
 
     fig2 = go.Figure()
-
-    fig2.add_trace(go.Scatter(
-        x=df["ano"], y=df["media_selic"],
-        name="SELIC", mode="lines+markers"
-    ))
-    fig2.add_trace(go.Scatter(
-        x=df["ano"], y=df["media_ipca"],
-        name="IPCA", mode="lines+markers"
-    ))
-    fig2.add_trace(go.Scatter(
-        x=df["ano"], y=df["taxa_real"],
-        name="Taxa Real", mode="lines+markers", line=dict(dash="dash")
-    ))
-
-    fig2.update_layout(
-        title="SELIC × IPCA × Taxa Real",
-        xaxis=dict(dtick=1),
-        yaxis_ticksuffix="%",
-    )
-
+    fig2.add_trace(go.Scatter(x=df["ano"], y=df["media_selic"], name="SELIC", mode="lines+markers"))
+    fig2.add_trace(go.Scatter(x=df["ano"], y=df["media_ipca"],  name="IPCA",  mode="lines+markers"))
+    fig2.add_trace(go.Scatter(x=df["ano"], y=df["taxa_real"],   name="Taxa Real", mode="lines+markers", line=dict(dash="dash")))
+    fig2.update_layout(title="SELIC × IPCA × Taxa Real", xaxis=dict(dtick=1), yaxis_ticksuffix="%")
     st.plotly_chart(fig2, use_container_width=True)
 
     st.divider()
 
     fig3 = go.Figure()
-
-    fig3.add_trace(go.Scatter(
-        x=df["ano"], y=df["media_selic"],
-        name="SELIC", mode="lines+markers"
-    ))
-    fig3.add_trace(go.Scatter(
-        x=df["ano"], y=df["media_cdi"],
-        name="CDI", mode="lines+markers"
-    ))
-
-    fig3.update_layout(
-        title="SELIC × CDI",
-        xaxis=dict(dtick=1),
-        yaxis_ticksuffix="%",
-    )
-
+    fig3.add_trace(go.Scatter(x=df["ano"], y=df["media_selic"], name="SELIC", mode="lines+markers"))
+    fig3.add_trace(go.Scatter(x=df["ano"], y=df["media_cdi"],   name="CDI",   mode="lines+markers"))
+    fig3.update_layout(title="SELIC × CDI", xaxis=dict(dtick=1), yaxis_ticksuffix="%")
     st.plotly_chart(fig3, use_container_width=True)
 
-#4 - Assistente IA
 with tab4:
     st.subheader("🤖 Assistente de Dados")
     st.caption("Faça perguntas sobre os indicadores econômicos em linguagem natural.")
@@ -150,10 +131,7 @@ with tab4:
             st.markdown(message["content"])
 
     if prompt := st.chat_input("Ex: qual foi a taxa real de juros em 2022?"):
-        st.session_state.messages.append({
-            "role": "user",
-            "content": prompt,
-        })
+        st.session_state.messages.append({"role": "user", "content": prompt})
 
         with st.chat_message("user"):
             st.markdown(prompt)
@@ -163,7 +141,4 @@ with tab4:
                 response = ask(prompt)
             st.markdown(response)
 
-        st.session_state.messages.append({
-            "role": "assistant",
-            "content": response,
-        })
+        st.session_state.messages.append({"role": "assistant", "content": response})

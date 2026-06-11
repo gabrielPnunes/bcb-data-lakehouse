@@ -1,30 +1,16 @@
 from processing.spark_session import spark
+from config.settings import GOLD, DB_CONFIG, JDBC_URL, JDBC_PROPS
 from utils.logger import logger
 import psycopg2
 import sys
-import os
-
-DB_CONFIG = {
-    "host": os.getenv("DB_HOST", "localhost"),
-    "port": 5432,
-    "dbname": "bcb_data",
-    "user": "admin",
-    "password": "admin",
-}
-
-JDBC_URL = "jdbc:postgresql://postgres-bcb:5432/bcb_data"
-JDBC_PROPS = {
-    "user": "admin",
-    "password": "admin",
-    "driver": "org.postgresql.Driver",
-}
 
 TABLES = {
-    "file:///app/data/gold/selic_anual":   "gold_selic_anual",
-    "file:///app/data/gold/ipca_anual":    "gold_ipca_anual",
-    "file:///app/data/gold/cambio_anual":  "gold_cambio_anual",
-    "file:///app/data/gold/cdi_anual":     "gold_cdi_anual",
-    "file:///app/data/gold/taxa_real_anual": "gold_taxa_real_anual",
+    GOLD["selic_anual"]:     "gold_selic_anual",
+    GOLD["ipca_anual"]:      "gold_ipca_anual",
+    GOLD["ipca_12m"]:        "gold_ipca_12m",
+    GOLD["cambio_anual"]:    "gold_cambio_anual",
+    GOLD["cdi_anual"]:       "gold_cdi_anual",
+    GOLD["taxa_real_anual"]: "gold_taxa_real_anual",
 }
 
 
@@ -37,8 +23,8 @@ def truncate_table(table_name: str):
         cur.close()
         conn.close()
         logger.info(f"Tabela {table_name} limpa")
-    except Exception:
-        logger.info(f"Tabela {table_name} não existe ainda — será criada")
+    except Exception as e:
+        logger.info(f"Tabela {table_name} nao existe ainda — sera criada")
 
 
 try:
@@ -51,9 +37,9 @@ try:
             .format("jdbc") \
             .option("url", JDBC_URL) \
             .option("dbtable", table) \
-            .option("user", "admin") \
-            .option("password", "admin") \
-            .option("driver", "org.postgresql.Driver") \
+            .option("user", JDBC_PROPS["user"]) \
+            .option("password", JDBC_PROPS["password"]) \
+            .option("driver", JDBC_PROPS["driver"]) \
             .mode("append") \
             .save()
 
